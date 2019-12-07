@@ -1,88 +1,112 @@
-﻿[Code]
-type
-  TBtnEventProc = procedure(h : hwnd);
-  TPBProc = function(h : hwnd; Msg, wParam, lParam : longint) : longint;
-  Win7TTimerProc = procedure(HandleW, Msg, idEvent, TimeSys: longword);
+﻿#include ".\dll.iss"
 
-const
-  PRODUCT_REGISTRY_KEY_32 = 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{#MyAppID}_is1';
-  PRODUCT_REGISTRY_KEY_64 = 'SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\{#MyAppID}_is1';
-  WM_SYSCOMMAND = $0112;
-  CS_DROPSHADOW = 131072;
-  GCL_STYLE = -26;
-  ID_BUTTON_ON_CLICK_EVENT = 1;
-  WIZARDFORM_WIDTH_NORMAL = 600;
-  WIZARDFORM_HEIGHT_NORMAL = 400;
-  WIZARDFORM_HEIGHT_MORE = 503;
-  SLIDES_PICTURE_WIDTH = WIZARDFORM_WIDTH_NORMAL;
-  SLIDES_PICTURE_HEIGHT = 332;
-  SLIDES_PAUSE_SECONDS = 3;
+[Code]
 
+//;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+//; define
+
+CONST
+  PRODUCT_REGISTRY_KEY          = 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{#MyAppID}_is1';
+
+  WIZARDFORM_WIDTH_NORMAL       = 600;
+  WIZARDFORM_HEIGHT_NORMAL      = 400;
+  WIZARDFORM_HEIGHT_MORE        = 503;
+  SLIDES_PICTURE_WIDTH          = WIZARDFORM_WIDTH_NORMAL;
+  SLIDES_PICTURE_HEIGHT         = 332;
+  SLIDES_PAUSE_SECONDS          = 3;
+
+  ID_BUTTON_ON_CLICK_EVENT      = 1;
+
+VAR
+  label_wizardform_main         : TLabel;
+  label_messagebox_main         : TLabel;
+  label_wizardform_more_product_already_installed : TLabel;
+  label_messagebox_information  : TLabel;
+  label_messagebox_title        : TLabel;
+  label_wizardform_title        : TLabel;
+  label_install_text            : TLabel;
+  label_install_progress        : TLabel;
+
+  image_wizardform_background   : longint;
+  image_messagebox_background   : longint;
+  image_progressbar_background  : longint;
+  image_progressbar_foreground  : longint;
+  PBOldProc                     : longint;
+
+  button_license                : HWND;
+  button_minimize               : HWND;
+  button_close                  : HWND;
+  button_browse                 : HWND;
+  button_setup_or_next          : HWND;
+  button_customize_setup        : HWND;
+  button_uncustomize_setup      : HWND;
+  checkbox_license              : HWND;
+  checkbox_setdefault           : HWND;
+  button_messagebox_close       : HWND;
+  button_messagebox_ok          : HWND;
+  button_messagebox_cancel      : HWND;
+
+  is_wizardform_show_normal     : boolean;
+  is_installer_initialized      : boolean;
+  is_platform_windows_7         : boolean;
+  is_wizardform_released        : boolean;
+  can_exit_setup                : boolean;
+  need_to_change_associations   : boolean;
+
+  edit_target_path              : TEdit;
+  version_installed_before      : string;
+  messagebox_close              : TSetupForm;
+
+  taskbar_update_timer          : longword;
+  wizardform_animation_timer    : longword;
+  slide_picture_timer           : longword;
+  slide_pause_timer             : longword;
+
+  fake_main_form                : TMainForm;
+
+  slide_1_b     : longint;
+  slide_2_b     : longint;
+  slide_3_b     : longint;
+  slide_4_b     : longint;
+  slide_1_t     : longint;
+  slide_2_t     : longint;
+  slide_3_t     : longint;
+  slide_4_t     : longint;
+
+  cur_pic_no    : integer;
+  cur_pic_pos   : integer;
+
+  time_counter  : integer;
+
+//;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+//; Function & Procedure
+
+//调用这个函数可以使矩形窗口转变为圆角矩形窗口
+procedure shape_form_round(aForm : TForm; edgeSize : integer);
 var
-  label_wizardform_main, label_messagebox_main, label_wizardform_more_product_already_installed, label_messagebox_information, label_messagebox_title, label_wizardform_title, label_install_text, label_install_progress : TLabel;
-  image_wizardform_background, image_messagebox_background, image_progressbar_background, image_progressbar_foreground, PBOldProc : longint;
-  button_license, button_minimize, button_close, button_browse, button_setup_or_next, button_customize_setup, button_uncustomize_setup, checkbox_license, checkbox_setdefault, button_messagebox_close, button_messagebox_ok, button_messagebox_cancel : hwnd;
-  is_wizardform_show_normal, is_installer_initialized, is_platform_windows_7, is_wizardform_released, can_exit_setup, need_to_change_associations : boolean;
-  edit_target_path : TEdit;
-  version_installed_before : string;
-  messagebox_close : TSetupForm;
-  taskbar_update_timer, wizardform_animation_timer, slide_picture_timer, slide_pause_timer : longword;
-  fake_main_form : TMainForm;
-  slide_1_b, slide_2_b, slide_3_b, slide_4_b, slide_1_t, slide_2_t, slide_3_t, slide_4_t : longint;
-  cur_pic_no, cur_pic_pos : integer;
-  time_counter : integer;
-
-//botva2 API
-function ImgLoad(h : hwnd; FileName : PAnsiChar; Left, Top, Width, Height : integer; Stretch, IsBkg : boolean) : longint; external 'ImgLoad@files:botva2.dll stdcall delayload';
-procedure ImgSetVisibility(img : longint; Visible : boolean); external 'ImgSetVisibility@files:botva2.dll stdcall delayload';
-procedure ImgApplyChanges(h : hwnd); external 'ImgApplyChanges@files:botva2.dll stdcall delayload';
-procedure ImgSetPosition(img : longint; NewLeft, NewTop, NewWidth, NewHeight : integer); external 'ImgSetPosition@files:botva2.dll stdcall delayload';
-procedure ImgRelease(img : longint); external 'ImgRelease@files:botva2.dll stdcall delayload';
-procedure CreateFormFromImage(h : hwnd; FileName : PAnsiChar); external 'CreateFormFromImage@files:botva2.dll stdcall delayload';
-procedure gdipShutdown();  external 'gdipShutdown@files:botva2.dll stdcall delayload';
-function WrapBtnCallback(Callback : TBtnEventProc; ParamCount : integer) : longword; external 'wrapcallback@files:innocallback.dll stdcall delayload';
-function BtnCreate(hParent : hwnd; Left, Top, Width, Height : integer; FileName : PAnsiChar; ShadowWidth : integer; IsCheckBtn : boolean) : hwnd;  external 'BtnCreate@files:botva2.dll stdcall delayload';
-procedure BtnSetVisibility(h : hwnd; Value : boolean); external 'BtnSetVisibility@files:botva2.dll stdcall delayload';
-procedure BtnSetEvent(h : hwnd; EventID : integer; Event : longword); external 'BtnSetEvent@files:botva2.dll stdcall delayload';
-procedure BtnSetEnabled(h : hwnd; Value : boolean); external 'BtnSetEnabled@files:botva2.dll stdcall delayload';
-function BtnGetChecked(h : hwnd) : boolean; external 'BtnGetChecked@files:botva2.dll stdcall delayload';
-procedure BtnSetChecked(h : hwnd; Value : boolean); external 'BtnSetChecked@files:botva2.dll stdcall delayload';
-procedure BtnSetPosition(h : hwnd; NewLeft, NewTop, NewWidth, NewHeight : integer);  external 'BtnSetPosition@files:botva2.dll stdcall delayload';
-function PBCallBack(P : TPBProc; ParamCount : integer) : longword; external 'wrapcallback@files:innocallback.dll stdcall delayload';
-procedure ImgSetVisiblePart(img : longint; NewLeft, NewTop, NewWidth, NewHeight : integer); external 'ImgSetVisiblePart@files:botva2.dll stdcall delayload';
-function WrapTimerProc(Callback: Win7TTimerProc; ParamCount: integer): longword; external 'wrapcallback@files:InnoCallback.dll stdcall delayload';
-//Windows API
-function CreateRoundRectRgn(p1, p2, p3, p4, p5, p6 : integer) : THandle; external 'CreateRoundRectRgn@gdi32.dll stdcall';
-function SetWindowRgn(h : hwnd; hRgn : THandle; bRedraw : boolean) : integer; external 'SetWindowRgn@user32.dll stdcall';
-function ReleaseCapture() : longint; external 'ReleaseCapture@user32.dll stdcall';
-function CallWindowProc(lpPrevWndFunc : longint; h : hwnd; Msg : UINT; wParam, lParam : longint) : longint; external 'CallWindowProcW@user32.dll stdcall';
-function SetWindowLong(h : hwnd; Index : integer; NewLong : longint) : longint; external 'SetWindowLongW@user32.dll stdcall';
-function GetWindowLong(h : hwnd; Index : integer) : longint; external 'GetWindowLongW@user32.dll stdcall';
-function GetDC(hWnd: HWND): longword; external 'GetDC@user32.dll stdcall';
-function BitBlt(DestDC: longword; X, Y, Width, Height: integer; SrcDC: longword; XSrc, YSrc: integer; Rop: DWORD): BOOL; external 'BitBlt@gdi32.dll stdcall';
-function ReleaseDC(hWnd: HWND; hDC: longword): integer; external 'ReleaseDC@user32.dll stdcall';
-function SetTimer(hWnd, nIDEvent, uElapse, lpTimerFunc: longword): longword; external 'SetTimer@user32.dll stdcall';
-function KillTimer(hWnd, nIDEvent: longword): longword; external 'KillTimer@user32.dll stdcall';
-function SetClassLong(h : hwnd; nIndex : integer; dwNewLong : longint) : DWORD; external 'SetClassLongW@user32.dll stdcall';
-function GetClassLong(h : hwnd; nIndex : integer) : DWORD; external 'GetClassLongW@user32.dll stdcall';
+  FormRegion : longword;
+begin
+  FormRegion := CreateRoundRectRgn(0, 0, aForm.ClientWidth, aForm.ClientHeight, edgeSize, edgeSize);
+  SetWindowRgn(aForm.Handle, FormRegion, True);
+end;
 
 //如果使用自定义卸载程序，就修改注册表，将默认卸载程序路径改为我们自己的卸载程序的路径
 procedure change_reg_uninst;
 begin
-  if RegValueExists(HKEY_LOCAL_MACHINE, PRODUCT_REGISTRY_KEY_32, 'UninstallString') then
+  if RegValueExists(HKLM32, PRODUCT_REGISTRY_KEY, 'UninstallString') then
   begin
-    RegDeleteValue(HKEY_LOCAL_MACHINE, PRODUCT_REGISTRY_KEY_32, 'UninstallString');
+    RegDeleteValue(HKLM32, PRODUCT_REGISTRY_KEY, 'UninstallString');
   end;
-  if RegValueExists(HKEY_LOCAL_MACHINE, PRODUCT_REGISTRY_KEY_64, 'UninstallString') then
+  if RegValueExists(HKLM64, PRODUCT_REGISTRY_KEY, 'UninstallString') then
   begin
-    RegDeleteValue(HKEY_LOCAL_MACHINE, PRODUCT_REGISTRY_KEY_64, 'UninstallString');
+    RegDeleteValue(HKLM64, PRODUCT_REGISTRY_KEY, 'UninstallString');
   end;
   if Is64BitInstallMode then
   begin
-    RegWriteStringValue(HKEY_LOCAL_MACHINE, PRODUCT_REGISTRY_KEY_64, 'UninstallString', ExpandConstant('"{app}\Uninstall.exe"'));
+    RegWriteStringValue(HKLM64, PRODUCT_REGISTRY_KEY, 'UninstallString', ExpandConstant('"{app}\Uninstall.exe"'));
   end else
   begin
-    RegWriteStringValue(HKEY_LOCAL_MACHINE, PRODUCT_REGISTRY_KEY_32, 'UninstallString', ExpandConstant('"{app}\Uninstall.exe"'));
+    RegWriteStringValue(HKLM32, PRODUCT_REGISTRY_KEY, 'UninstallString', ExpandConstant('"{app}\Uninstall.exe"'));
   end;
 end;
 
@@ -142,7 +166,7 @@ begin
   cur_pic_pos := cur_pic_pos + 10;
   if (ScaleX(cur_pic_pos) > ScaleX(SLIDES_PICTURE_WIDTH)) then
   begin
-    cur_pic_no := cur_pic_no + 1;
+    cur_pic_no  := cur_pic_no + 1;
     cur_pic_pos := 0;
     pause_slides_for_a_while;
   end else
@@ -208,26 +232,6 @@ begin
   ImgApplyChanges(WizardForm.Handle);
 end;
 
-//轮播图片点击事件：打开特定网页
-procedure slide_picture_on_click(Sender : TObject);
-var
-  URL : string;
-  ErrorCode : Integer;
-begin
-  URL := '';
-  case cur_pic_no of
-    0: URL := 'http://www.example.com/';
-    1: URL := 'http://www.example.com/';
-    2: URL := 'http://www.example.com/';
-    3: URL := 'http://www.example.com/';
-    4: URL := 'http://www.example.com/';
-  end;
-  if URL <> '' then
-  begin
-    ShellExec('open', URL, '', '', SW_SHOW, ewNoWait,  ErrorCode);
-  end;
-end;
-
 //停止动画计时器
 procedure stop_animation_timer;
 begin
@@ -284,9 +288,9 @@ procedure update_img(HandleW, Msg, idEvent, TimeSys: longword);
 var
   FormDC, DC: longword;
 begin
-  fake_main_form.ClientWidth := WizardForm.ClientWidth;
+  fake_main_form.ClientWidth  := WizardForm.ClientWidth;
   fake_main_form.ClientHeight := WizardForm.ClientHeight;
-  DC := GetDC(fake_main_form.Handle);
+  DC     := GetDC(fake_main_form.Handle);
   FormDC := GetDC(WizardForm.Handle);
   BitBlt(DC, 0, 0, fake_main_form.ClientWidth, fake_main_form.ClientHeight, FormDC, 0, 0, $00CC0020);
   ReleaseDC(fake_main_form.Handle, DC);
@@ -299,13 +303,13 @@ begin
   fake_main_form := TMainForm.Create(nil);
   if is_win7_or_newer then
   begin
-    fake_main_form.BorderStyle := bsNone;
-    fake_main_form.ClientWidth := WizardForm.ClientWidth;
+    fake_main_form.BorderStyle  := bsNone;
+    fake_main_form.ClientWidth  := WizardForm.ClientWidth;
     fake_main_form.ClientHeight := WizardForm.ClientHeight;
-    fake_main_form.Left := WizardForm.Left - ScaleX(999999);
-    fake_main_form.Top := WizardForm.Top - ScaleY(999999);
-    fake_main_form.Show;
-    taskbar_update_timer := SetTimer(0, 0, 500, WrapTimerProc(@Update_Img, 4));
+    fake_main_form.Left         := WizardForm.Left - ScaleX(999999);
+    fake_main_form.Top          := WizardForm.Top  - ScaleY(999999);
+    fake_main_form.Hide;
+    taskbar_update_timer        := SetTimer(0, 0, 500, WrapTimerProc(@update_img, 4));
   end;
 end;
 
@@ -322,73 +326,38 @@ begin
   end;
 end;
 
-//调用这个函数可以使矩形窗口转变为圆角矩形窗口
-procedure shape_form_round(aForm : TForm; edgeSize : integer);
-var
-  FormRegion : longword;
-begin
-  FormRegion := CreateRoundRectRgn(0, 0, aForm.ClientWidth, aForm.ClientHeight, edgeSize, edgeSize);
-  SetWindowRgn(aForm.Handle, FormRegion, True);
-end;
-
 //这个函数的作用是判断是否已经安装了将要安装的产品，若已经安装，则返回TRUE，否则返回FALSE
 function is_installed_before() : boolean;
 begin
-#ifndef _WIN64
-  if is_platform_windows_7 then
+  if Is64BitInstallMode then
   begin
-    if Is64BitInstallMode then
+    if RegKeyExists(HKLM64, PRODUCT_REGISTRY_KEY) then
     begin
-      if RegKeyExists(HKEY_LOCAL_MACHINE, PRODUCT_REGISTRY_KEY_64) then
-      begin
-        RegQueryStringValue(HKEY_LOCAL_MACHINE, PRODUCT_REGISTRY_KEY_64, 'DisplayVersion', version_installed_before);
-        Result := True;
-      end else
-      begin
-        version_installed_before := '0.0.0';
-        Result := False;
-      end;
+      RegQueryStringValue(HKLM64, PRODUCT_REGISTRY_KEY, 'DisplayVersion', version_installed_before);
+      Result := True;
     end else
     begin
-      if RegKeyExists(HKEY_LOCAL_MACHINE, PRODUCT_REGISTRY_KEY_32) then
-      begin
-        RegQueryStringValue(HKEY_LOCAL_MACHINE, PRODUCT_REGISTRY_KEY_32, 'DisplayVersion', version_installed_before);
-        Result := True;
-      end else
-      begin
-        version_installed_before := '0.0.0';
-        Result := False;
-      end;
+      version_installed_before := '0.0.0';
+      Result := False;
     end;
   end else
   begin
-    if RegKeyExists(HKEY_LOCAL_MACHINE, PRODUCT_REGISTRY_KEY_32) then
-      begin
-        RegQueryStringValue(HKEY_LOCAL_MACHINE, PRODUCT_REGISTRY_KEY_32, 'DisplayVersion', version_installed_before);
-        Result := True;
-      end else
-      begin
-        version_installed_before := '0.0.0';
-        Result := False;
-      end;
+    if RegKeyExists(HKLM32, PRODUCT_REGISTRY_KEY) then
+    begin
+      RegQueryStringValue(HKLM32, PRODUCT_REGISTRY_KEY, 'DisplayVersion', version_installed_before);
+      Result := True;
+    end else
+    begin
+      version_installed_before := '0.0.0';
+      Result := False;
+    end;
   end;
-#else
-  if RegKeyExists(HKEY_LOCAL_MACHINE, PRODUCT_REGISTRY_KEY_32) then
-  begin
-    RegQueryStringValue(HKEY_LOCAL_MACHINE, PRODUCT_REGISTRY_KEY_32, 'DisplayVersion', version_installed_before);
-    Result := True;
-  end else
-  begin
-    version_installed_before := '0.0.0';
-    Result := False;
-  end;
-#endif
 end;
 
 //这个函数的作用是判断是否正在安装旧版本（若系统中已经安装了将要安装的产品），是则返回TRUE，否则返回FALSE
 function is_installing_older_version() : boolean;
 var
-  installedVer : array[1..10] of longint;
+  installedVer  : array[1..10] of longint;
   installingVer : array[1..10] of longint;
   oldVer, nowVer, version_installing_now : string;
   i, oldTotal, nowTotal, total : integer;
@@ -402,6 +371,7 @@ begin
     oldTotal := oldTotal + 1;
     version_installed_before := Copy(version_installed_before, (Pos('.', version_installed_before) + 1), (Length(version_installed_before) - Pos('.', version_installed_before)));
   end;
+
   if (version_installed_before <> '') then
   begin
     installedVer[oldTotal] := StrToIntDef(version_installed_before, 0);
@@ -409,6 +379,7 @@ begin
   begin
     oldTotal := oldTotal - 1;
   end;
+
   version_installing_now := '{#MyAppVersion}';
   nowTotal := 1;
   while (Pos('.', version_installing_now) > 0) do
@@ -419,6 +390,7 @@ begin
     nowTotal := nowTotal + 1;
     version_installing_now := Copy(version_installing_now, (Pos('.', version_installing_now) + 1), (Length(version_installing_now) - Pos('.', version_installing_now)));
   end;
+
   if (version_installing_now <> '') then
   begin
     installingVer[nowTotal] := StrToIntDef(version_installing_now, 0);
@@ -426,6 +398,7 @@ begin
   begin
     nowTotal := nowTotal - 1;
   end;
+
   if (oldTotal < nowTotal) then
   begin
     for i := (oldTotal + 1) to nowTotal do
@@ -444,6 +417,7 @@ begin
   begin
     total := nowTotal;
   end;
+
   for i := 1 to total do
   begin
     if (installedVer[i] > installingVer[i]) then
@@ -459,37 +433,38 @@ begin
       Continue;
     end;
   end;
+
   Result := False;
 end;
 
 //主界面关闭按钮按下时执行的脚本
-procedure button_close_on_click(hBtn : hwnd);
+procedure button_close_on_click(hBtn : HWND);
 begin
   WizardForm.CancelButton.OnClick(WizardForm);
 end;
 
 //主界面最小化按钮按下时执行的脚本
-procedure button_minimize_on_click(hBtn : hwnd);
+procedure button_minimize_on_click(hBtn : HWND);
 begin
   SendMessage(WizardForm.Handle, WM_SYSCOMMAND, 61472, 0);
 end;
 
 //主界面自定义安装按钮按下时执行的脚本
-procedure button_customize_setup_on_click(hBtn : hwnd);
+procedure button_customize_setup_on_click(hBtn : HWND);
 begin
   if is_wizardform_show_normal then
   begin
     stop_animation_timer;
     image_wizardform_background := ImgLoad(WizardForm.Handle, ExpandConstant('{tmp}\background_welcome_more.png'), 0, 0, ScaleX(WIZARDFORM_WIDTH_NORMAL), ScaleY(WIZARDFORM_HEIGHT_MORE), True, True);
-    is_wizardform_show_normal := False;
-    wizardform_animation_timer := SetTimer(0, 0, 1, WrapTimerProc(@show_full_wizardform_animation, 4));
+    is_wizardform_show_normal   := False;
+    wizardform_animation_timer  := SetTimer(0, 0, 1, WrapTimerProc(@show_full_wizardform_animation, 4));
     BtnSetVisibility(button_customize_setup, False);
     BtnSetVisibility(button_uncustomize_setup, True);
   end else
   begin
     stop_animation_timer;
-    is_wizardform_show_normal := True;
-    wizardform_animation_timer := SetTimer(0, 0, 1, WrapTimerProc(@show_normal_wizardform_animation, 4));
+    is_wizardform_show_normal   := True;
+    wizardform_animation_timer  := SetTimer(0, 0, 1, WrapTimerProc(@show_normal_wizardform_animation, 4));
     image_wizardform_background := ImgLoad(WizardForm.Handle, ExpandConstant('{tmp}\background_welcome.png'), 0, 0, ScaleX(WIZARDFORM_WIDTH_NORMAL), ScaleY(WIZARDFORM_HEIGHT_NORMAL), True, True);
     BtnSetVisibility(button_customize_setup, True);
     BtnSetVisibility(button_uncustomize_setup, False);
@@ -498,7 +473,7 @@ begin
 end;
 
 //主界面浏览按钮按下时执行的脚本
-procedure button_browse_on_click(hBtn : hwnd);
+procedure button_browse_on_click(hBtn : HWND);
 begin
   WizardForm.DirBrowseButton.OnClick(WizardForm);
   edit_target_path.Text := WizardForm.DirEdit.Text;
@@ -511,7 +486,7 @@ begin
 end;
 
 //同意许可协议的复选框被点击时执行的脚本
-procedure checkbox_license_on_click(hBtn : hwnd);
+procedure checkbox_license_on_click(hBtn : HWND);
 begin
     if BtnGetChecked(checkbox_license) then
     begin
@@ -523,7 +498,7 @@ begin
 end;
 
 //设为默认软件的复选框被点击时执行的脚本
-procedure checkbox_setdefault_on_click(hBtn : hwnd);
+procedure checkbox_setdefault_on_click(hBtn : HWND);
 begin
   if BtnGetChecked(checkbox_setdefault) then
   begin
@@ -540,18 +515,8 @@ begin
   Result := need_to_change_associations;
 end;
 
-//若设为默认软件的复选框被勾选，则会在文件复制结束时执行此段脚本
-procedure check_if_need_change_associations();
-begin
-  if is_setdefault_checkbox_checked() then
-  begin
-    //TODO
-    MsgBox('此处执行注册文件后缀名的操作。', mbInformation, MB_OK);
-  end;
-end;
-
 //主界面安装按钮按下时执行的脚本
-procedure button_setup_or_next_on_click(hBtn : hwnd);
+procedure button_setup_or_next_on_click(hBtn : HWND);
 begin
   WizardForm.NextButton.OnClick(WizardForm);
 end;
@@ -569,6 +534,7 @@ begin
     i2 := WizardForm.ProgressGauge.Max - WizardForm.ProgressGauge.Min;
     pr := (i1 * 100) / i2;
     label_install_progress.Caption := Format('%d', [Round(pr)]) + '%';
+
     w := Round((ScaleX(560) * pr) / 100);
     ImgSetPosition(image_progressbar_foreground, ScaleX(20), ScaleY(374), w, ScaleY(6));
     ImgSetVisiblePart(image_progressbar_foreground, 0, 0, w, ScaleY(6));
@@ -577,7 +543,7 @@ begin
 end;
 
 //阅读许可协议的按钮按下时执行的脚本
-procedure button_license_on_click(hBtn : hwnd);
+procedure button_license_on_click(hBtn : HWND);
 var
   ErrorCode : integer;
 begin
@@ -585,14 +551,14 @@ begin
 end;
 
 //取消安装弹框的确定按钮按下时执行的脚本
-procedure button_messagebox_ok_on_click(hBtn : hwnd);
+procedure button_messagebox_ok_on_click(hBtn : HWND);
 begin
   can_exit_setup := True;
   messagebox_close.Close();
 end;
 
 //取消安装弹框的取消按钮按下时执行的脚本
-procedure button_messagebox_cancel_on_click(hBtn : hwnd);
+procedure button_messagebox_cancel_on_click(hBtn : HWND);
 begin
   can_exit_setup := False;
   messagebox_close.Close();
@@ -612,83 +578,75 @@ begin
   SendMessage(messagebox_close.Handle, WM_SYSCOMMAND, $F012, 0);
 end;
 
-//判断系统是否为Win7，是则返回TRUE，否则返回FALSE
-procedure determine_wether_is_windows_7_or_not();
-var
-  sysVersion : TWindowsVersion;
-begin
-  GetWindowsVersionEx(sysVersion);
-  if sysVersion.NTPlatform and (sysVersion.Major = 6) and (sysVersion.Minor = 1) then
-  begin
-    is_platform_windows_7 := True;
-  end else
-  begin
-    is_platform_windows_7 := False;
-  end;
-end;
-
 //创建取消弹框的脚本
 procedure messagebox_close_create();
 begin
   messagebox_close := CreateCustomForm();
   with messagebox_close do
   begin
-    BorderStyle := bsNone;
-    ClientWidth := ScaleX(380);
-    ClientHeight := ScaleY(190);
-    Color := clWhite;
-    Caption := '';
+    BorderStyle     := bsNone;
+    ClientWidth     := ScaleX(380);
+    ClientHeight    := ScaleY(190);
+    Color           := clWhite;
+    Caption         := 'MessageBox';
   end;
+
   label_messagebox_title := TLabel.Create(messagebox_close);
   with label_messagebox_title do
   begin
-    Parent := messagebox_close;
-    AutoSize := False;
-    Left := ScaleX(30);
-    Top := ScaleY(5);
-    ClientWidth := ScaleX(500);
-    ClientHeight := ScaleY(20);
-    Font.Size := 10;
-    Font.Color := clWhite;
-    Caption := CustomMessage('messagebox_close_title');
-    Transparent := True;
-    OnMouseDown := @messagebox_on_mouse_down;
+    Parent          := messagebox_close;
+    AutoSize        := False;
+    Left            := ScaleX(30);
+    Top             := ScaleY(5);
+    ClientWidth     := ScaleX(500);
+    ClientHeight    := ScaleY(20);
+    Font.Size       := 10;
+    Font.Color      := clWhite;
+    Caption         := CustomMessage('messagebox_close_title');
+    Transparent     := True;
+    OnMouseDown     := @messagebox_on_mouse_down;
   end;
+
   label_messagebox_information := TLabel.Create(messagebox_close);
   with label_messagebox_information do
   begin
-    Parent := messagebox_close;
-    AutoSize := False;
-    Left := ScaleX(70);
-    Top := ScaleY(64);
-    ClientWidth := ScaleX(400);
-    ClientHeight := ScaleY(20);
-    Font.Size := 10;
-    Font.Color := clBlack;
-    Caption := CustomMessage('messagebox_close_text');
-    Transparent := True;
-    OnMouseDown := @messagebox_on_mouse_down;
+    Parent          := messagebox_close;
+    AutoSize        := False;
+    Left            := ScaleX(70);
+    Top             := ScaleY(64);
+    ClientWidth     := ScaleX(400);
+    ClientHeight    := ScaleY(20);
+    Font.Size       := 10;
+    Font.Color      := clBlack;
+    Caption         := CustomMessage('messagebox_close_text');
+    Transparent     := True;
+    OnMouseDown     := @messagebox_on_mouse_down;
   end;
+
   label_messagebox_main := TLabel.Create(messagebox_close);
   with label_messagebox_main do
   begin
-    Parent := messagebox_close;
-    AutoSize := False;
-    Left := 0;
-    Top := 0;
-    ClientWidth := messagebox_close.ClientWidth;
-    ClientHeight := messagebox_close.ClientHeight;
-    Caption := '';
-    Transparent := True;
-    OnMouseDown := @messagebox_on_mouse_down;
+    Parent          := messagebox_close;
+    AutoSize        := False;
+    Left            := 0;
+    Top             := 0;
+    ClientWidth     := messagebox_close.ClientWidth;
+    ClientHeight    := messagebox_close.ClientHeight;
+    Caption         := '';
+    Transparent     := True;
+    OnMouseDown     := @messagebox_on_mouse_down;
   end;
-  image_messagebox_background := ImgLoad(messagebox_close.Handle, ExpandConstant('{tmp}\background_messagebox.png'), 0, 0, ScaleX(380), ScaleY(190), True, True);
-  button_messagebox_close := BtnCreate(messagebox_close.Handle, ScaleX(350), 0, ScaleX(30), ScaleY(30), ExpandConstant('{tmp}\button_close.png'), 0, False);
+
+  image_messagebox_background   := ImgLoad(messagebox_close.Handle, ExpandConstant('{tmp}\background_messagebox.png'), 0, 0, ScaleX(380), ScaleY(190), True, True);
+  button_messagebox_close       := BtnCreate(messagebox_close.Handle, ScaleX(350), 0, ScaleX(30), ScaleY(30), ExpandConstant('{tmp}\button_close.png'), 0, False);
   BtnSetEvent(button_messagebox_close, ID_BUTTON_ON_CLICK_EVENT, WrapBtnCallback(@button_messagebox_cancel_on_click, 1));
-  button_messagebox_ok := BtnCreate(messagebox_close.Handle, ScaleX(206), ScaleY(150), ScaleX(76), ScaleY(28), ExpandConstant('{tmp}\button_ok.png'), 0, False);
+
+  button_messagebox_ok          := BtnCreate(messagebox_close.Handle, ScaleX(206), ScaleY(150), ScaleX(76), ScaleY(28), ExpandConstant('{tmp}\button_ok.png'), 0, False);
   BtnSetEvent(button_messagebox_ok, ID_BUTTON_ON_CLICK_EVENT, WrapBtnCallback(@button_messagebox_ok_on_click, 1));
-  button_messagebox_cancel := BtnCreate(messagebox_close.Handle, ScaleX(293), ScaleY(150), ScaleX(76), ScaleY(28), ExpandConstant('{tmp}\button_cancel.png'), 0, False);
+
+  button_messagebox_cancel      := BtnCreate(messagebox_close.Handle, ScaleX(293), ScaleY(150), ScaleX(76), ScaleY(28), ExpandConstant('{tmp}\button_cancel.png'), 0, False);
   BtnSetEvent(button_messagebox_cancel, ID_BUTTON_ON_CLICK_EVENT, WrapBtnCallback(@button_messagebox_cancel_on_click, 1));
+
   ImgApplyChanges(messagebox_close.Handle);
 end;
 
@@ -724,9 +682,6 @@ begin
   ExtractTemporaryFile('progressbar_foreground.png');
   ExtractTemporaryFile('button_license.png');
   ExtractTemporaryFile('checkbox_license.png');
-#ifdef RegisteAssociations
-  ExtractTemporaryFile('checkbox_setdefault.png');
-#endif
 #ifdef ShowSlidePictures
   ExtractTemporaryFile('slides_picture_1.png');
   ExtractTemporaryFile('slides_picture_2.png');
@@ -746,7 +701,6 @@ end;
 procedure CancelButtonClick(CurPageID : integer; var Cancel, Confirm: boolean);
 begin
   Confirm := False;
-  messagebox_close.Center();
   messagebox_close.ShowModal();
   if can_exit_setup then
   begin
@@ -761,7 +715,7 @@ end;
 //重载安装程序初始化函数，判断是否已经安装新版本，是则禁止安装
 function InitializeSetup() : boolean;
 begin
-#ifndef PortableBuild
+#ifndef PortableMode
 #ifdef OnlyInstallNewVersion
   if is_installed_before() then
   begin
@@ -788,104 +742,117 @@ end;
 //重载安装程序初始化函数（和上边那个不一样），进行初始化操作
 procedure InitializeWizard();
 begin
-  is_installer_initialized := True;
-  is_wizardform_show_normal := True;
-  is_wizardform_released := False;
-  need_to_change_associations := True;
-  determine_wether_is_windows_7_or_not();
+  is_installer_initialized      := True;
+  is_wizardform_show_normal     := True;
+  is_wizardform_released        := False;
+  need_to_change_associations   := True;
   extract_temp_files();
   WizardForm.InnerNotebook.Hide();
   WizardForm.OuterNotebook.Hide();
   WizardForm.Bevel.Hide();
   with WizardForm do
   begin
-    BorderStyle := bsNone;
-    Position := poDesktopCenter;
-    ClientWidth := ScaleX(WIZARDFORM_WIDTH_NORMAL);
-    ClientHeight := ScaleY(WIZARDFORM_HEIGHT_MORE);
-    Color := clWhite;
-    NextButton.ClientHeight := 0;
-    CancelButton.ClientHeight := 0;
-    BackButton.Visible := False;
+    BorderStyle     := bsNone;
+    Position        := poDesktopCenter;
+    ClientWidth     := ScaleX(WIZARDFORM_WIDTH_NORMAL);
+    ClientHeight    := ScaleY(WIZARDFORM_HEIGHT_MORE);
+    Color           := clWhite;
+    NextButton.ClientHeight     := 0;
+    CancelButton.ClientHeight   := 0;
+    BackButton.Visible          := False;
   end;
+
   label_wizardform_title := TLabel.Create(WizardForm);
   with label_wizardform_title do
   begin
-    Parent := WizardForm;
-    AutoSize := False;
-    Left := ScaleX(10);
-    Top := ScaleY(5);
-    ClientWidth := ScaleX(300);
-    ClientHeight := ScaleY(20);
-    Font.Size := 9;
-    Font.Color := clWhite;
-    Caption := CustomMessage('wizardform_title');
-    Transparent := True;
-    OnMouseDown := @wizardform_on_mouse_down;
+    Parent          := WizardForm;
+    AutoSize        := False;
+    Left            := ScaleX(10);
+    Top             := ScaleY(5);
+    ClientWidth     := ScaleX(300);
+    ClientHeight    := ScaleY(20);
+    Font.Size       := 9;
+    Font.Color      := clWhite;
+    Caption         := CustomMessage('wizardform_title');
+    Transparent     := True;
+    OnMouseDown     := @wizardform_on_mouse_down;
   end;
+
   label_wizardform_more_product_already_installed := TLabel.Create(WizardForm);
   with label_wizardform_more_product_already_installed do
   begin
-    Parent := WizardForm;
-    AutoSize := False;
-    Left := ScaleX(85);
-    Top := ScaleY(449);
-    ClientWidth := ScaleX(300);
-    ClientHeight := ScaleY(20);
-    Font.Size := 9;
-    Font.Color := clGray;
-    Caption := CustomMessage('no_change_destdir_warning');
-    Transparent := True;
-    OnMouseDown := @wizardform_on_mouse_down;
-  end;
+    Parent          := WizardForm;
+    AutoSize        := False;
+    Left            := ScaleX(85);
+    Top             := ScaleY(449);
+    ClientWidth     := ScaleX(300);
+    ClientHeight    := ScaleY(20);
+    Font.Size       := 9;
+    Font.Color      := clGray;
+    Caption         := CustomMessage('no_change_destdir_warning');
+    Transparent     := True;
+    OnMouseDown     := @wizardform_on_mouse_down;
+  end;  
   label_wizardform_more_product_already_installed.Hide();
+
   label_wizardform_main := TLabel.Create(WizardForm);
   with label_wizardform_main do
   begin
-    Parent := WizardForm;
-    AutoSize := False;
-    Left := 0;
-    Top := 0;
-    ClientWidth := WizardForm.ClientWidth;
-    ClientHeight := WizardForm.ClientHeight;
-    Caption := '';
-    Transparent := True;
-    OnMouseDown := @wizardform_on_mouse_down;
+    Parent          := WizardForm;
+    AutoSize        := False;
+    Left            := 0;
+    Top             := 0;
+    ClientWidth     := WizardForm.ClientWidth;
+    ClientHeight    := WizardForm.ClientHeight;
+    Caption         := '';
+    Transparent     := True;
+    OnMouseDown     := @wizardform_on_mouse_down;
   end;
+
   edit_target_path := TEdit.Create(WizardForm);
   with edit_target_path do
   begin
-    Parent := WizardForm;
-    Text := WizardForm.DirEdit.Text;
-    Font.Size := 9;
-    BorderStyle := bsNone;
+    Parent          := WizardForm;
+    Text            := WizardForm.DirEdit.Text;
+    Font.Size       := 9;
+    BorderStyle     := bsNone;
     SetBounds(ScaleX(91), ScaleY(423), ScaleX(402), ScaleY(20));
-    OnChange := @edit_target_path_on_change;
-    Color := clWhite;
-    TabStop := False;
+    OnChange        := @edit_target_path_on_change;
+    Color           := clWhite;
+    TabStop         := False;
   end;
+
   edit_target_path.Hide();
+
   button_close := BtnCreate(WizardForm.Handle, ScaleX(570), 0, ScaleX(30), ScaleY(30), ExpandConstant('{tmp}\button_close.png'), 0, False);
   BtnSetEvent(button_close, ID_BUTTON_ON_CLICK_EVENT, WrapBtnCallback(@button_close_on_click, 1));
+
   button_minimize := BtnCreate(WizardForm.Handle, ScaleX(540), 0, ScaleX(30), ScaleY(30), ExpandConstant('{tmp}\button_minimize.png'), 0, False);
   BtnSetEvent(button_minimize, ID_BUTTON_ON_CLICK_EVENT, WrapBtnCallback(@button_minimize_on_click, 1));
+
   button_setup_or_next := BtnCreate(WizardForm.Handle, ScaleX(211), ScaleY(305), ScaleX(178), ScaleY(43), ExpandConstant('{tmp}\button_setup_or_next.png'), 0, False);
   BtnSetEvent(button_setup_or_next, ID_BUTTON_ON_CLICK_EVENT, WrapBtnCallback(@button_setup_or_next_on_click, 1));
+
   button_browse := BtnCreate(WizardForm.Handle, ScaleX(506), ScaleY(420), ScaleX(75), ScaleY(24), ExpandConstant('{tmp}\button_browse.png'), 0, False);
   BtnSetEvent(button_browse, ID_BUTTON_ON_CLICK_EVENT, WrapBtnCallback(@button_browse_on_click, 1));
   BtnSetVisibility(button_browse, False);
+
   button_customize_setup := BtnCreate(WizardForm.Handle, ScaleX(511), ScaleY(374), ScaleX(78), ScaleY(14), ExpandConstant('{tmp}\button_customize_setup.png'), 0, False);
   BtnSetEvent(button_customize_setup, ID_BUTTON_ON_CLICK_EVENT, WrapBtnCallback(@button_customize_setup_on_click, 1));
+
   button_uncustomize_setup := BtnCreate(WizardForm.Handle, ScaleX(511), ScaleY(374), ScaleX(78), ScaleY(14), ExpandConstant('{tmp}\button_uncustomize_setup.png'), 0, False);
   BtnSetEvent(button_uncustomize_setup, ID_BUTTON_ON_CLICK_EVENT, WrapBtnCallback(@button_customize_setup_on_click, 1));
   BtnSetVisibility(button_uncustomize_setup, False);
-  PBOldProc := SetWindowLong(WizardForm.ProgressGauge.Handle, -4, PBCallBack(@PBProc, 4));
+
+  PBOldProc := SetWindowLong(WizardForm.ProgressGauge.Handle, -4, ProgressBarCallBack(@PBProc, 4));
   ImgApplyChanges(WizardForm.Handle);
+
   messagebox_close_create();
   SetClassLong(WizardForm.Handle, GCL_STYLE, GetClassLong(WizardForm.Handle, GCL_STYLE) or CS_DROPSHADOW);
   SetClassLong(messagebox_close.Handle, GCL_STYLE, GetClassLong(messagebox_close.Handle, GCL_STYLE) or CS_DROPSHADOW);
+
   init_taskbar;
-  cur_pic_no := 0;
+  cur_pic_no  := 0;
   cur_pic_pos := 0;
 end;
 
@@ -911,22 +878,19 @@ begin
   if (CurPageID = wpWelcome) then
   begin
     image_wizardform_background := ImgLoad(WizardForm.Handle, ExpandConstant('{tmp}\background_welcome.png'), 0, 0, ScaleX(WIZARDFORM_WIDTH_NORMAL), ScaleY(WIZARDFORM_HEIGHT_NORMAL), True, True);
-    button_license := BtnCreate(WizardForm.Handle, ScaleX(110), ScaleY(376), ScaleX(96), ScaleY(12), ExpandConstant('{tmp}\button_license.png'), 0, False);
+    button_license              := BtnCreate(WizardForm.Handle, ScaleX(110), ScaleY(376), ScaleX(96), ScaleY(12), ExpandConstant('{tmp}\button_license.png'), 0, False);
     BtnSetEvent(button_license, ID_BUTTON_ON_CLICK_EVENT, WrapBtnCallback(@button_license_on_click, 1));
-    checkbox_license := BtnCreate(WizardForm.Handle, ScaleX(11), ScaleY(374), ScaleX(93), ScaleY(17), ExpandConstant('{tmp}\checkbox_license.png'), 0, True);
+    
+    checkbox_license            := BtnCreate(WizardForm.Handle, ScaleX(11), ScaleY(374), ScaleX(93), ScaleY(17), ExpandConstant('{tmp}\checkbox_license.png'), 0, True);
     BtnSetEvent(checkbox_license, ID_BUTTON_ON_CLICK_EVENT, WrapBtnCallback(@checkbox_license_on_click, 1));
     BtnSetChecked(checkbox_license, True);
-#ifdef RegisteAssociations
-    checkbox_setdefault := BtnCreate(WizardForm.Handle, ScaleX(85), ScaleY(470), ScaleX(92), ScaleY(17), ExpandConstant('{tmp}\checkbox_setdefault.png'), 0, True);
-    BtnSetEvent(checkbox_setdefault, ID_BUTTON_ON_CLICK_EVENT, WrapBtnCallback(@checkbox_setdefault_on_click, 1));
-    BtnSetChecked(checkbox_setdefault, True);
-    BtnSetVisibility(checkbox_setdefault, True);
-#endif
+    
     edit_target_path.Show();
     BtnSetVisibility(button_browse, True);
     BtnSetVisibility(button_customize_setup, True);
     BtnSetVisibility(button_uncustomize_setup, False);
-#ifndef PortableBuild
+
+#ifndef PortableMode
     if is_installed_before() then
     begin
       edit_target_path.Enabled := False;
@@ -937,56 +901,56 @@ begin
     WizardForm.ClientHeight := ScaleY(WIZARDFORM_HEIGHT_NORMAL);
     ImgApplyChanges(WizardForm.Handle);
   end;
+
   if (CurPageID = wpInstalling) then
   begin
     stop_animation_timer;
-    is_wizardform_show_normal := True;
-    wizardform_animation_timer := SetTimer(0, 0, 1, WrapTimerProc(@show_normal_wizardform_animation, 4));
+    is_wizardform_show_normal   := True;
+    wizardform_animation_timer  := SetTimer(0, 0, 1, WrapTimerProc(@show_normal_wizardform_animation, 4));
     edit_target_path.Hide();
     label_wizardform_more_product_already_installed.Hide();
     BtnSetVisibility(button_browse, False);
-    is_wizardform_show_normal := True;
     BtnSetVisibility(button_customize_setup, False);
     BtnSetVisibility(button_uncustomize_setup, False);
     BtnSetVisibility(button_close, False);
-    BtnSetPosition(button_minimize, ScaleX(570), 0, ScaleX(30), ScaleY(30));
-#ifdef RegisteAssociations
-    BtnSetVisibility(checkbox_setdefault, False);
-#endif
     BtnSetVisibility(button_license, False);
     BtnSetVisibility(checkbox_license, False);
+    BtnSetPosition(button_minimize, ScaleX(570), 0, ScaleX(30), ScaleY(30));
+
     label_install_text := TLabel.Create(WizardForm);
     with label_install_text do
     begin
-      Parent := WizardForm;
-      AutoSize := False;
-      Left := ScaleX(20);
-      Top := ScaleY(349);
-      ClientWidth := ScaleX(60);
-      ClientHeight := ScaleY(30);
-      Font.Size := 10;
-      Font.Color := clBlack;
-      Caption := CustomMessage('installing_label_text');
-      Transparent := True;
-      OnMouseDown := @wizardform_on_mouse_down;
+      Parent        := WizardForm;
+      AutoSize      := False;
+      Left          := ScaleX(20);
+      Top           := ScaleY(349);
+      ClientWidth   := ScaleX(60);
+      ClientHeight  := ScaleY(30);
+      Font.Size     := 10;
+      Font.Color    := clBlack;
+      Caption       := CustomMessage('installing_label_text');
+      Transparent   := True;
+      OnMouseDown   := @wizardform_on_mouse_down;
     end;
+
     label_install_progress := TLabel.Create(WizardForm);
     with label_install_progress do
     begin
-      Parent := WizardForm;
-      AutoSize := False;
-      Left := ScaleX(547);
-      Top := ScaleY(349);
-      ClientWidth := ScaleX(30);
-      ClientHeight := ScaleY(30);
-      Font.Size := 10;
-      Font.Color := clBlack;
-      Caption := '';
-      Transparent := True;
-      Alignment := taRightJustify;
-      OnMouseDown := @wizardform_on_mouse_down;
+      Parent        := WizardForm;
+      AutoSize      := False;
+      Left          := ScaleX(547);
+      Top           := ScaleY(349);
+      ClientWidth   := ScaleX(30);
+      ClientHeight  := ScaleY(30);
+      Font.Size     := 10;
+      Font.Color    := clBlack;
+      Caption       := '';
+      Transparent   := True;
+      Alignment     := taRightJustify;
+      OnMouseDown   := @wizardform_on_mouse_down;
     end;
-    image_wizardform_background := ImgLoad(WizardForm.Handle, ExpandConstant('{tmp}\background_installing.png'), 0, 0, ScaleX(WIZARDFORM_WIDTH_NORMAL), ScaleY(WIZARDFORM_HEIGHT_NORMAL), True, True);
+
+    image_wizardform_background  := ImgLoad(WizardForm.Handle, ExpandConstant('{tmp}\background_installing.png'), 0, 0, ScaleX(WIZARDFORM_WIDTH_NORMAL), ScaleY(WIZARDFORM_HEIGHT_NORMAL), True, True);
     image_progressbar_background := ImgLoad(WizardForm.Handle, ExpandConstant('{tmp}\progressbar_background.png'), ScaleX(20), ScaleY(374), ScaleX(560), ScaleY(6), True, True);
     image_progressbar_foreground := ImgLoad(WizardForm.Handle, ExpandConstant('{tmp}\progressbar_foreground.png'), ScaleX(20), ScaleY(374), 0, 0, True, True);
     BtnSetVisibility(button_setup_or_next, False);
@@ -1012,10 +976,11 @@ begin
 #ifdef ShowSlidePictures
     stop_slide_timer;
     stop_slide_pause_timer;
-    time_counter := 0;
-	  slide_picture_timer := SetTimer(0, 0, 20, WrapTimerProc(@pictures_slides_animation, 4));
+    time_counter        := 0;
+	slide_picture_timer := SetTimer(0, 0, 20, WrapTimerProc(@pictures_slides_animation, 4));
 #endif
   end;
+
   if (CurPageID = wpFinished) then
   begin
 #ifdef ShowSlidePictures
@@ -1042,13 +1007,6 @@ end;
 //安装步骤改变时会调用这个函数
 procedure CurStepChanged(CurStep : TSetupStep);
 begin
-  if (CurStep = ssPostInstall) then
-  begin
-#ifdef RegisteAssociations
-    check_if_need_change_associations();
-#endif
-    //and do other things you want
-  end;
   if (CurStep = ssDone) then
   begin
     is_wizardform_released := True;
@@ -1062,15 +1020,18 @@ end;
 //指定跳过哪些标准页面
 function ShouldSkipPage(PageID : integer) : boolean;
 begin
-  if (PageID = wpLicense) then Result := True;
-  if (PageID = wpPassword) then Result := True;
-  if (PageID = wpInfoBefore) then Result := True;
-  if (PageID = wpUserInfo) then Result := True;
-  if (PageID = wpSelectDir) then Result := True;
-  if (PageID = wpSelectComponents) then Result := True;
-  if (PageID = wpSelectProgramGroup) then Result := True;
-  if (PageID = wpSelectTasks) then Result := True;
-  if (PageID = wpReady) then Result := True;
-  if (PageID = wpPreparing) then Result := True;
-  if (PageID = wpInfoAfter) then Result := True;
+  if (PageID = wpLicense)               then Result := True;
+  if (PageID = wpPassword)              then Result := True;
+  if (PageID = wpInfoBefore)            then Result := True;
+  if (PageID = wpUserInfo)              then Result := True;
+  if (PageID = wpSelectDir)             then Result := True;
+  if (PageID = wpSelectComponents)      then Result := True;
+  if (PageID = wpSelectProgramGroup)    then Result := True;
+  if (PageID = wpSelectTasks)           then Result := True;
+  if (PageID = wpReady)                 then Result := True;
+  if (PageID = wpPreparing)             then Result := True;
+  if (PageID = wpInfoAfter)             then Result := True;
 end;
+
+
+
