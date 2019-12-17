@@ -1,4 +1,4 @@
-#ifndef AW
+﻿#ifndef AW
     #ifdef UNICODE
         #define AW "W"
     #else

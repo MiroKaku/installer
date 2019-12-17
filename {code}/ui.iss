@@ -1,4 +1,4 @@
-
+﻿
 #include ".\Windows.iss"
 #include ".\botva2.iss"
 

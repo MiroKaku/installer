@@ -1,4 +1,4 @@
-[Code]
+﻿[Code]
 // 用于 botva2.dll 库 0.9.9 版的模块
 // 由 South.Tver 创建于 03/2015
 // http://krinkels.org/resources/botva2.47/
