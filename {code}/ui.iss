@@ -1,5 +1,4 @@
-﻿
-#include ".\Windows.iss"
+﻿#include ".\Windows.iss"
 #include ".\botva2.iss"
 
 [Code]
@@ -115,6 +114,10 @@ const
 ////////////////////////////////////////////////////////////////////////////
 // declaration
 
+// DPI
+function GetScalingFactor   (): Integer; forward;
+
+// Window
 function CreateMsgBox       (): Boolean; forward;
 function CreateLicense      (): Boolean; forward;
 function CreateWizardMain   (): Boolean; forward;
@@ -128,6 +131,29 @@ procedure MInnoWizardAnimationShowFull  (hWnd: HWND; uMsg: UINT; nIDEvent: UINT_
 procedure MInnoWizardAnimationShowNormal(hWnd: HWND; uMsg: UINT; nIDEvent: UINT_PTR; uElapse: UINT); forward;
 
 procedure BtnClickEvent_Main_Next(hWnd : HWND); forward;
+
+////////////////////////////////////////////////////////////////////////////
+// DPI
+
+function GetScalingFactor: Integer;
+begin
+    if WizardForm.Font.PixelsPerInch >= 192 then Result := 200
+        else
+    if WizardForm.Font.PixelsPerInch >= 168 then Result := 175
+        else
+    if WizardForm.Font.PixelsPerInch >= 144 then Result := 150
+        else
+    if WizardForm.Font.PixelsPerInch >= 120 then Result := 125
+        else Result := 100;
+end;
+
+function GetScaleImage(Image: String): String;
+var
+    Path: String;
+begin
+    Path    := Format('%s\%d\%s', [ExpandConstant('{tmp}'), GetScalingFactor(), Image]);
+    Result  := Path;
+end;
 
 ////////////////////////////////////////////////////////////////////////////
 // Inno Setup Events
@@ -281,7 +307,9 @@ begin
         gdipShutdown();
 
         MsgBoxWindow.Release();
+#ifdef MyAppLicenseFile
         LicenseWindow.Release();
+#endif
         MainWindow.Release();
     end;
 end;
@@ -313,7 +341,7 @@ begin
     begin
         if IsInstallingOlderVersion() then
         begin
-            MsgBox(CustomMessage('init_setup_outdated_version_warning'), mbInformation, MB_OK);
+            MsgBox(FmtMessage(SetupMessage(msgWinVersionTooLowError), ['{#MyAppFriendlyName}', '{#MyAppVersion}']), mbInformation, MB_OK);
             Result := False;
         end else
         begin
@@ -341,35 +369,15 @@ begin
 end;
 
 procedure ExtractAllTemporaryFile();
+var
+    Path: String;
 begin
-    ExtractTemporaryFile('button_customize_setup.png');
-    ExtractTemporaryFile('button_uncustomize_setup.png');
-    ExtractTemporaryFile('button_finish.png');
-    ExtractTemporaryFile('button_setup_or_next.png');
-    ExtractTemporaryFile('background_welcome.png');
-    ExtractTemporaryFile('background_welcome_more.png');
-    ExtractTemporaryFile('button_browse.png');
-    ExtractTemporaryFile('progressbar_background.png');
-    ExtractTemporaryFile('progressbar_foreground.png');
-    ExtractTemporaryFile('button_license.png');
-    ExtractTemporaryFile('checkbox_license.png');
-#ifdef ShowSlidePictures
-    ExtractTemporaryFile('slides_picture_1.png');
-    ExtractTemporaryFile('slides_picture_2.png');
-    ExtractTemporaryFile('slides_picture_3.png');
-    ExtractTemporaryFile('slides_picture_4.png');
-#endif
-    ExtractTemporaryFile('background_installing.png');
-    ExtractTemporaryFile('background_finish.png');
-    ExtractTemporaryFile('button_close.png');
-    ExtractTemporaryFile('button_minimize.png');
-    ExtractTemporaryFile('background_messagebox.png');
-    ExtractTemporaryFile('button_cancel.png');
-    ExtractTemporaryFile('button_ok.png');
+    // image
+    Path := Format('{tmp}\%d\*', [GetScalingFactor()]);
+    ExtractTemporaryFiles(Path);
+
 #ifdef MyAppLicenseFile
-    ExtractTemporaryFile('background_form_license.png');
-    ExtractTemporaryFile('button_agree.png');
-    ExtractTemporaryFile('button_disagree.png');
+    // license
     ExtractTemporaryFile('{#MyAppLicenseFile}');
 #endif
 end;
@@ -428,29 +436,29 @@ begin
         BtnSetPosition  (MainWindow.BtnMinimize, ScaleX(WIZARDFORM_WIDTH_NORMAL - 30), 0, ScaleX(30), ScaleY(30));
 
         // ProgressBar
-        MainWindow.ImgProgressBarBackground := ImgLoad(MainWindow.Handle(), ExpandConstant('{tmp}\progressbar_background.png'), 
+        MainWindow.ImgProgressBarBackground := ImgLoad(MainWindow.Handle(), GetScaleImage('progressbar_background.png'), 
             ScaleX(20), ScaleY(374), ScaleX(560), ScaleY(6), True, True);
 
-        MainWindow.ImgProgressBarForeground := ImgLoad(MainWindow.Handle(), ExpandConstant('{tmp}\progressbar_foreground.png'), 
-            ScaleX(20), ScaleY(374), 0, 0, True, True);
+        MainWindow.ImgProgressBarForeground := ImgLoad(MainWindow.Handle(), GetScaleImage('progressbar_foreground.png'), 
+            ScaleX(20), ScaleY(374), ScaleX(0), ScaleY(0), True, True);
                 
 #ifdef ShowSlidePictures
-        MainWindow.Slide_1_b := ImgLoad(MainWindow.Handle(), ExpandConstant('{tmp}\slides_picture_1.png'),
-            0, 0, ScaleX(SLIDES_PICTURE_WIDTH), ScaleY(SLIDES_PICTURE_HEIGHT), True, True);
-        MainWindow.Slide_2_b := ImgLoad(MainWindow.Handle(), ExpandConstant('{tmp}\slides_picture_2.png'),
-            0, 0, ScaleX(SLIDES_PICTURE_WIDTH), ScaleY(SLIDES_PICTURE_HEIGHT), True, True);
-        MainWindow.Slide_3_b := ImgLoad(MainWindow.Handle(), ExpandConstant('{tmp}\slides_picture_3.png'),
-            0, 0, ScaleX(SLIDES_PICTURE_WIDTH), ScaleY(SLIDES_PICTURE_HEIGHT), True, True);
-        MainWindow.Slide_4_b := ImgLoad(MainWindow.Handle(), ExpandConstant('{tmp}\slides_picture_4.png'),
-            0, 0, ScaleX(SLIDES_PICTURE_WIDTH), ScaleY(SLIDES_PICTURE_HEIGHT), True, True);
-        MainWindow.Slide_1_t := ImgLoad(MainWindow.Handle(), ExpandConstant('{tmp}\slides_picture_1.png'),
-            0, 0, ScaleX(SLIDES_PICTURE_WIDTH), ScaleY(SLIDES_PICTURE_HEIGHT), True, True);
-        MainWindow.Slide_2_t := ImgLoad(MainWindow.Handle(), ExpandConstant('{tmp}\slides_picture_2.png'),
-            0, 0, ScaleX(SLIDES_PICTURE_WIDTH), ScaleY(SLIDES_PICTURE_HEIGHT), True, True);
-        MainWindow.Slide_3_t := ImgLoad(MainWindow.Handle(), ExpandConstant('{tmp}\slides_picture_3.png'),
-            0, 0, ScaleX(SLIDES_PICTURE_WIDTH), ScaleY(SLIDES_PICTURE_HEIGHT), True, True);
-        MainWindow.Slide_4_t := ImgLoad(MainWindow.Handle(), ExpandConstant('{tmp}\slides_picture_4.png'),
-            0, 0, ScaleX(SLIDES_PICTURE_WIDTH), ScaleY(SLIDES_PICTURE_HEIGHT), True, True);
+        MainWindow.Slide_1_b := ImgLoad(MainWindow.Handle(), GetScaleImage('slides_picture_1.png'),
+            ScaleX(0), ScaleY(0), ScaleX(SLIDES_PICTURE_WIDTH), ScaleY(SLIDES_PICTURE_HEIGHT), True, True);
+        MainWindow.Slide_2_b := ImgLoad(MainWindow.Handle(), GetScaleImage('slides_picture_2.png'),
+            ScaleX(0), ScaleY(0), ScaleX(SLIDES_PICTURE_WIDTH), ScaleY(SLIDES_PICTURE_HEIGHT), True, True);
+        MainWindow.Slide_3_b := ImgLoad(MainWindow.Handle(), GetScaleImage('slides_picture_3.png'),
+            ScaleX(0), ScaleY(0), ScaleX(SLIDES_PICTURE_WIDTH), ScaleY(SLIDES_PICTURE_HEIGHT), True, True);
+        MainWindow.Slide_4_b := ImgLoad(MainWindow.Handle(), GetScaleImage('slides_picture_4.png'),
+            ScaleX(0), ScaleY(0), ScaleX(SLIDES_PICTURE_WIDTH), ScaleY(SLIDES_PICTURE_HEIGHT), True, True);
+        MainWindow.Slide_1_t := ImgLoad(MainWindow.Handle(), GetScaleImage('slides_picture_1.png'),
+            ScaleX(0), ScaleY(0), ScaleX(SLIDES_PICTURE_WIDTH), ScaleY(SLIDES_PICTURE_HEIGHT), True, True);
+        MainWindow.Slide_2_t := ImgLoad(MainWindow.Handle(), GetScaleImage('slides_picture_2.png'),
+            ScaleX(0), ScaleY(0), ScaleX(SLIDES_PICTURE_WIDTH), ScaleY(SLIDES_PICTURE_HEIGHT), True, True);
+        MainWindow.Slide_3_t := ImgLoad(MainWindow.Handle(), GetScaleImage('slides_picture_3.png'),
+            ScaleX(0), ScaleY(0), ScaleX(SLIDES_PICTURE_WIDTH), ScaleY(SLIDES_PICTURE_HEIGHT), True, True);
+        MainWindow.Slide_4_t := ImgLoad(MainWindow.Handle(), GetScaleImage('slides_picture_4.png'),
+            ScaleX(0), ScaleY(0), ScaleX(SLIDES_PICTURE_WIDTH), ScaleY(SLIDES_PICTURE_HEIGHT), True, True);
 
         ImgSetVisibility(MainWindow.Slide_1_t, False);
         ImgSetVisibility(MainWindow.Slide_2_t, False);
@@ -486,13 +494,13 @@ begin
         BtnSetPosition  (MainWindow.BtnMinimize, ScaleX(WIZARDFORM_WIDTH_NORMAL - 30 - 30), 0, ScaleX(30), ScaleY(30));
 
         MainWindow.BtnNext := BtnCreate(MainWindow.Handle(),
-            ScaleX(214), ScaleY(305), ScaleX(180), ScaleY(44), ExpandConstant('{tmp}\button_finish.png'), 0, False);
+            ScaleX(214), ScaleY(305), ScaleX(180), ScaleY(44), GetScaleImage('button_finish.png'), 0, False);
 
         BtnSetEvent(MainWindow.BtnNext , BtnClickEventID, CreateCallback(@BtnClickEvent_Main_Next));
         BtnSetEvent(MainWindow.BtnClose, BtnClickEventID, CreateCallback(@BtnClickEvent_Main_Next));
 
-        MainWindow.ImgBackground := ImgLoad(MainWindow.Handle(), ExpandConstant('{tmp}\background_finish.png'),
-            0, 0, ScaleX(WIZARDFORM_WIDTH_NORMAL), ScaleY(WIZARDFORM_HEIGHT_NORMAL), True, True);
+        MainWindow.ImgBackground := ImgLoad(MainWindow.Handle(), GetScaleImage('background_finish.png'),
+            ScaleX(0), ScaleY(0), ScaleX(WIZARDFORM_WIDTH_NORMAL), ScaleY(WIZARDFORM_HEIGHT_NORMAL), True, True);
     end;
 
     ImgApplyChanges (MainWindow.Handle());
@@ -560,7 +568,7 @@ begin
         ClientHeight    := ScaleY(20);
         Font.Size       := 10;
         Font.Color      := clWhite;
-        Caption         := CustomMessage('messagebox_close_title');
+        Caption         := FmtMessage(SetupMessage(msgSetupWindowTitle), ['{#MyAppFriendlyName}']);
         Transparent     := True;
         OnMouseDown     := @OnMoveWindow_MsgBox;
     end;
@@ -577,7 +585,7 @@ begin
         ClientHeight    := ScaleY(20);
         Font.Size       := 10;
         Font.Color      := clBlack;
-        Caption         := CustomMessage('messagebox_close_text');
+        Caption         := SetupMessage(msgExitSetupTitle);
         Transparent     := True;
         OnMouseDown     := @OnMoveWindow_MsgBox;
     end;
@@ -598,18 +606,18 @@ begin
     end;
 
     // Background Image
-    MsgBoxWindow.ImgBackground := ImgLoad(MsgBoxWindow.Handle(), ExpandConstant('{tmp}\background_messagebox.png'),
-        0, 0, ScaleX(380), ScaleY(190), False, True);
+    MsgBoxWindow.ImgBackground := ImgLoad(MsgBoxWindow.Handle(), GetScaleImage('background_messagebox.png'),
+        ScaleX(0), ScaleY(0), ScaleX(380), ScaleY(190), False, True);
  
     // Button
     MsgBoxWindow.BtnOk      := BtnCreate(MsgBoxWindow.Handle(), 
-        ScaleX(206), ScaleY(150), ScaleX(76), ScaleY(28), ExpandConstant('{tmp}\button_ok.png'), 0, False);
+        ScaleX(206), ScaleY(150), ScaleX(76), ScaleY(28), GetScaleImage('button_ok.png'), 0, False);
 
     MsgBoxWindow.BtnCancel  := BtnCreate(MsgBoxWindow.Handle(), 
-        ScaleX(293), ScaleY(150), ScaleX(76), ScaleY(28), ExpandConstant('{tmp}\button_cancel.png'), 0, False);
+        ScaleX(293), ScaleY(150), ScaleX(76), ScaleY(28), GetScaleImage('button_cancel.png'), 0, False);
 
     MsgBoxWindow.BtnClose   := BtnCreate(MsgBoxWindow.Handle(), 
-        ScaleX(350), ScaleY(0), ScaleX(30), ScaleY(30), ExpandConstant('{tmp}\button_close.png'), 0, False);
+        ScaleX(350), ScaleY(0), ScaleX(30), ScaleY(30), GetScaleImage('button_close.png'), 0, False);
 
     // Button-Event
     BtnSetEvent(MsgBoxWindow.BtnOk,     BtnClickEventID, CreateCallback(@BtnClickEvent_MsgBox_Ok));
@@ -661,6 +669,7 @@ end;
 ////////////////////////////////////////////////////////////////////////////
 // LicenseWindow
 
+#ifdef MyAppLicenseFile
 procedure OnMoveWindow_License(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
   ReleaseCapture();
@@ -706,7 +715,7 @@ begin
     //    ClientHeight    := ScaleY(20);
     //    Font.Size       := 10;
     //    Font.Color      := clWhite;
-    //    Caption         := CustomMessage('messagebox_close_title');
+    //    Caption         := FmtMessage(SetupMessage(msgSetupWindowTitle), ['{#MyAppFriendlyName}']);
     //    Transparent     := True;
     //    OnMouseDown     := @OnMoveWindow_License;
     //end;
@@ -744,18 +753,18 @@ begin
     end;
 
     // Background Image
-    LicenseWindow.ImgBackground := ImgLoad(LicenseWindow.Handle(), ExpandConstant('{tmp}\background_form_license.png'),
-        0, 0, ScaleX(510), ScaleY(447), False, True);
+    LicenseWindow.ImgBackground := ImgLoad(LicenseWindow.Handle(), GetScaleImage('background_form_license.png'),
+        ScaleX(0), ScaleY(0), ScaleX(510), ScaleY(447), False, True);
  
     // Button
     LicenseWindow.BtnOk      := BtnCreate(LicenseWindow.Handle(), 
-        ScaleX(114), ScaleY(412), ScaleX(106), ScaleY(24), ExpandConstant('{tmp}\button_agree.png'), 0, False);
+        ScaleX(114), ScaleY(412), ScaleX(106), ScaleY(24), GetScaleImage('button_agree.png'), 0, False);
 
     LicenseWindow.BtnCancel  := BtnCreate(LicenseWindow.Handle(), 
-        ScaleX(285), ScaleY(412), ScaleX(106), ScaleY(24), ExpandConstant('{tmp}\button_disagree.png'), 0, False);
+        ScaleX(285), ScaleY(412), ScaleX(106), ScaleY(24), GetScaleImage('button_disagree.png'), 0, False);
 
     LicenseWindow.BtnClose   := BtnCreate(LicenseWindow.Handle(), 
-        ScaleX(510 - 30 - 1), ScaleY(1), ScaleX(30), ScaleY(30), ExpandConstant('{tmp}\button_close.png'), 0, False);
+        ScaleX(510 - 30 - 1), ScaleY(1), ScaleX(30), ScaleY(30), GetScaleImage('button_close.png'), 0, False);
 
     // Button-Event
     BtnSetEvent(LicenseWindow.BtnOk,     BtnClickEventID, CreateCallback(@BtnClickEvent_License_Ok));
@@ -802,6 +811,7 @@ begin
 
     Result := LicenseWindow.Create(); 
 end;
+#endif
 
 ////////////////////////////////////////////////////////////////////////////
 // MainWindow
@@ -999,8 +1009,8 @@ begin
         StopTimer_Animation;
 
         IsMainShowNormal := False;
-        MainWindow.ImgBackground  := ImgLoad(MainWindow.Handle(), ExpandConstant('{tmp}\background_welcome_more.png'),
-            0, 0, ScaleX(WIZARDFORM_WIDTH_NORMAL), ScaleY(WIZARDFORM_HEIGHT_MORE), True, True);
+        MainWindow.ImgBackground  := ImgLoad(MainWindow.Handle(), GetScaleImage('background_welcome_more.png'),
+            ScaleX(0), ScaleY(0), ScaleX(WIZARDFORM_WIDTH_NORMAL), ScaleY(WIZARDFORM_HEIGHT_MORE), True, True);
 
         BtnSetVisibility(MainWindow.BtnMoreOption   , False);
         BtnSetVisibility(MainWindow.BtnNormalOption , True);
@@ -1023,8 +1033,8 @@ begin
         StopTimer_Animation;
 
         IsMainShowNormal := True;
-        MainWindow.ImgBackground  := ImgLoad(MainWindow.Handle(), ExpandConstant('{tmp}\background_welcome.png'),
-            0, 0, ScaleX(WIZARDFORM_WIDTH_NORMAL), ScaleY(WIZARDFORM_HEIGHT_NORMAL), True, True);
+        MainWindow.ImgBackground  := ImgLoad(MainWindow.Handle(), GetScaleImage('background_welcome.png'),
+            ScaleX(0), ScaleY(0), ScaleX(WIZARDFORM_WIDTH_NORMAL), ScaleY(WIZARDFORM_HEIGHT_NORMAL), True, True);
             
         BtnSetVisibility(MainWindow.BtnMoreOption   , True);
         BtnSetVisibility(MainWindow.BtnNormalOption , False);
@@ -1046,6 +1056,7 @@ end;
 procedure BtnClickEvent_Main_License(hWnd : HWND);
 var
     DosCode : Integer;
+
 begin
 #ifdef MyAppLicenseFile
     LicenseWindow.ShowModal();
@@ -1082,6 +1093,9 @@ begin
 end;
 
 function MInnoWizardMain_Create(): Boolean;
+var
+    Tips : string;
+
 begin
     WizardForm.InnerNotebook.Hide();
     WizardForm.OuterNotebook.Hide();
@@ -1115,7 +1129,7 @@ begin
         ClientHeight    := ScaleY(20);
         Font.Size       := 9;
         Font.Color      := clWhite;
-        Caption         := CustomMessage('wizardform_title');
+        Caption         := FmtMessage(CustomMessage('NameAndVersion'), ['{#MyAppFriendlyName}', '{#MyAppVersion}']);
         Transparent     := True;
         OnMouseDown     := @OnMoveWindow_Main;
     end;
@@ -1154,6 +1168,9 @@ begin
     MainWindow.Path.Hide();
 
     // Installed Tips
+    Tips := SetupMessage(msgFinishedLabelNoIcons);
+    StringChangeEx(Tips, '[name]', '{#MyAppFriendlyName}', True);
+
     MainWindow.InstalledTips := TLabel.Create(WizardForm);
     with MainWindow.InstalledTips do
     begin
@@ -1165,7 +1182,7 @@ begin
         ClientHeight    := ScaleY(20);
         Font.Size       := 9;
         Font.Color      := clGray;
-        Caption         := CustomMessage('no_change_destdir_warning');
+        Caption         := Tips;
         Transparent     := True;
         OnMouseDown     := @OnMoveWindow_Main;
     end;
@@ -1183,7 +1200,7 @@ begin
         ClientHeight    := ScaleY(30);
         Font.Size       := 9;
         Font.Color      := clBlack;
-        Caption         := CustomMessage('installing_label_text');
+        Caption         := SetupMessage(msgWizardInstalling);
         Transparent     := True;
         OnMouseDown     := @OnMoveWindow_Main;
     end;
@@ -1209,33 +1226,33 @@ begin
 
 
     // Background
-    MainWindow.ImgBackground := ImgLoad(MainWindow.Handle(), ExpandConstant('{tmp}\background_welcome.png'), 
+    MainWindow.ImgBackground := ImgLoad(MainWindow.Handle(), GetScaleImage('background_welcome.png'), 
         ScaleX(0), ScaleY(0), ScaleX(WIZARDFORM_WIDTH_NORMAL), ScaleY(WIZARDFORM_HEIGHT_NORMAL), True, True);
 
     // Button
     MainWindow.BtnClose         := BtnCreate(MainWindow.Handle(), 
-        ScaleX(WIZARDFORM_WIDTH_NORMAL - 30), ScaleY(0), ScaleX(30), ScaleY(30), ExpandConstant('{tmp}\button_close.png'), 0, False);
+        ScaleX(WIZARDFORM_WIDTH_NORMAL - 30), ScaleY(0), ScaleX(30), ScaleY(30), GetScaleImage('button_close.png'), 0, False);
 
     MainWindow.BtnMinimize      := BtnCreate(MainWindow.Handle(), 
-        ScaleX(WIZARDFORM_WIDTH_NORMAL - 30 - 30), ScaleY(0), ScaleX(30), ScaleY(30), ExpandConstant('{tmp}\button_minimize.png'), 0, False);
+        ScaleX(WIZARDFORM_WIDTH_NORMAL - 30 - 30), ScaleY(0), ScaleX(30), ScaleY(30), GetScaleImage('button_minimize.png'), 0, False);
     
     MainWindow.BtnNext          := BtnCreate(MainWindow.Handle(),
-        ScaleX(211), ScaleY(305), ScaleX(178), ScaleY(43), ExpandConstant('{tmp}\button_setup_or_next.png'), 0, False);
+        ScaleX(211), ScaleY(305), ScaleX(178), ScaleY(43), GetScaleImage('button_setup_or_next.png'), 0, False);
 
     MainWindow.BtnSelectPath    := BtnCreate(MainWindow.Handle(),
-        ScaleX(506), ScaleY(420), ScaleX(75), ScaleY(24), ExpandConstant('{tmp}\button_browse.png'), 0, False);
+        ScaleX(506), ScaleY(420), ScaleX(75), ScaleY(24), GetScaleImage('button_browse.png'), 0, False);
 
     MainWindow.BtnMoreOption    := BtnCreate(MainWindow.Handle(),
-        ScaleX(511), ScaleY(374), ScaleX(78), ScaleY(14), ExpandConstant('{tmp}\button_customize_setup.png'), 0, False);
+        ScaleX(511), ScaleY(374), ScaleX(78), ScaleY(14), GetScaleImage('button_customize_setup.png'), 0, False);
 
     MainWindow.BtnNormalOption  := BtnCreate(MainWindow.Handle(),
-        ScaleX(511), ScaleY(374), ScaleX(78), ScaleY(14), ExpandConstant('{tmp}\button_uncustomize_setup.png'), 0, False);
+        ScaleX(511), ScaleY(374), ScaleX(78), ScaleY(14), GetScaleImage('button_uncustomize_setup.png'), 0, False);
 
     MainWindow.BtnLicense := BtnCreate(MainWindow.Handle(), 
-        ScaleX(110), ScaleY(376), ScaleX(96), ScaleY(12), ExpandConstant('{tmp}\button_license.png'), 0, False);
+        ScaleX(110), ScaleY(376), ScaleX(96), ScaleY(12), GetScaleImage('button_license.png'), 0, False);
              
     MainWindow.ChkLicense := BtnCreate(MainWindow.Handle(), 
-        ScaleX(11), ScaleY(374), ScaleX(93), ScaleY(17), ExpandConstant('{tmp}\checkbox_license.png'), 0, True);
+        ScaleX(11), ScaleY(374), ScaleX(93), ScaleY(17), GetScaleImage('checkbox_license.png'), 0, True);
 
     // Button-Event
     BtnSetEvent(MainWindow.BtnClose         , BtnClickEventID, CreateCallback(@BtnClickEvent_Main_Close));

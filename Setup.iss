@@ -150,30 +150,12 @@ Name: "Ukrainian";           MessagesFile: "compiler:Languages\Ukrainian.isl"
 Name: "Korean";              MessagesFile: ".\{lang}\Korean.isl"
 Name: "ChineseTraditional";  MessagesFile: ".\{lang}\ChineseTraditional.isl"
 
-
-[CustomMessages]
-;此段条目在等号后面直接跟具体的值，不能加双引号
-;English（默认语言）
-English.messagebox_close_title                          ={#MyAppName} Setup
-English.messagebox_close_text                           =Are you sure to abort {#MyAppName} setup?
-English.init_setup_outdated_version_warning             =You have already installed a newer version of {#MyAppName}, so you are not allowed to continue. Click <OK> to abort.
-English.wizardform_title                                ={#MyAppName} V{#MyAppVersion} Setup
-English.no_change_destdir_warning                       =You are not allowed to change destination folder.
-English.installing_label_text                           =Installing
-;简体中文
-ChineseSimplified.messagebox_close_title                ={#MyAppName} 安装
-ChineseSimplified.messagebox_close_text                 =您确定要退出“{#MyAppName}”安装程序吗？
-ChineseSimplified.init_setup_outdated_version_warning   =您已安装更新版本的“{#MyAppName}”，不允许使用旧版本替换新版本，请单击“确定”按钮退出此安装程序。
-ChineseSimplified.wizardform_title                      ={#MyAppName} V{#MyAppVersion} 安装
-ChineseSimplified.no_change_destdir_warning             =软件已经安装，不允许更换目录。
-ChineseSimplified.installing_label_text                 =正在安装
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Files
 
 [Files]
 ;包含所有临时资源文件
-Source: ".\{tmp}\*"; DestDir: "{tmp}"; Flags: dontcopy solidbreak; Attribs: hidden system
+Source: ".\{tmp}\*"; DestDir: "{tmp}"; Flags: dontcopy solidbreak recursesubdirs createallsubdirs; Attribs: hidden system
 
 ;包含待打包项目的所有文件及文件夹
 Source: "{#MyAppBinDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs

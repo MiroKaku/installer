@@ -11,7 +11,7 @@
 #define MINNO_APP_MUTEX_32_STR      MINNO_APP_ID_32_STR
 #define MINNO_APP_MUTEX_64_STR      MINNO_APP_ID_64_STR
 #define MINNO_APP_NAME_STR          "My Program"
-#define MINNO_EXE_NAME_STR          "Launcher.exe"
+#define MINNO_EXE_NAME_STR          "Program.exe"
 #define MINNO_APP_FRIENDLY_NAME_STR "My Program"
 #define MINNO_COMPANY_NAME_STR      "example"
 #define MINNO_COMPANY_URL_STR       "http://www.example.com/"
