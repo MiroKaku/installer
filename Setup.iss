@@ -23,7 +23,9 @@
 ;若想开启禁止安装旧版本的功能，此处版本号请注意一定要是
 ;点分十进制的正整数，除数字和英文半角句点以外不允许出现任何其他字符，
 ;否则程序无法判断版本的高低。
-#define MyAppVersion        str(MINNO_VERSION_MAJOR) + "." + str(MINNO_VERSION_MINOR) + "." + str(MINNO_VERSION_PATCH) + "." + str(MINNO_VERSION_BUILD)
+#define MyAppBinDir         ".\{app}"
+;#define MyAppVersion        GetFileVersion(MyAppBinDir + '\' + MyAppExeName)
+#define MyAppVersion        str(MINNO_VERSION_MAJOR) + "." + str(MINNO_VERSION_MINOR) + "." + str(MINNO_VERSION_PATCH) + "." + str(MINNO_VERSION_BUILD)      
 #define MyAppPublisher      str(MINNO_COMPANY_NAME_STR)
 #define MyAppPublisherURL   str(MINNO_COMPANY_URL_STR)
 #define MyAppSupportURL     str(MINNO_SUPPORT_URL_STR)
@@ -36,7 +38,10 @@
 #define MyAppMutex          str(MINNO_APP_MUTEX_STR)
 #define MyAppExeName        str(MINNO_EXE_NAME_STR)
 #define MyAppFriendlyName   str(MINNO_APP_FRIENDLY_NAME_STR)
-#define MyAppBinDir         ".\{app}"
+
+#ifdef MINNO_LICENSE_FILE_STR
+  #define MyAppLicenseFile  str(MINNO_LICENSE_FILE_STR)
+#endif
 
 #ifdef _WIN64
   #define MyAppName         str(MINNO_APP_NAME_STR) + "(64-bit)"
