@@ -435,6 +435,10 @@ begin
         BtnSetVisibility(MainWindow.BtnClose        , False);
         BtnSetPosition  (MainWindow.BtnMinimize, ScaleX(WIZARDFORM_WIDTH_NORMAL - 30), 0, ScaleX(30), ScaleY(30));
 
+        // Background
+        MainWindow.ImgBackground := ImgLoad(WizardForm.Handle, GetScaleImage('background_installing.png'),
+            ScaleX(0), ScaleY(0), ScaleX(WIZARDFORM_WIDTH_NORMAL), ScaleY(WIZARDFORM_HEIGHT_NORMAL), True, True);
+
         // ProgressBar
         MainWindow.ImgProgressBarBackground := ImgLoad(MainWindow.Handle(), GetScaleImage('progressbar_background.png'), 
             ScaleX(20), ScaleY(374), ScaleX(560), ScaleY(6), True, True);
