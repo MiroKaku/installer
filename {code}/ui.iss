@@ -433,7 +433,7 @@ begin
         BtnSetVisibility(MainWindow.BtnLicense      , False);
         BtnSetVisibility(MainWindow.ChkLicense      , False);
         BtnSetVisibility(MainWindow.BtnClose        , False);
-        BtnSetPosition  (MainWindow.BtnMinimize, ScaleX(WIZARDFORM_WIDTH_NORMAL - 30), 0, ScaleX(30), ScaleY(30));
+        BtnSetPosition  (MainWindow.BtnMinimize, ScaleX(WIZARDFORM_WIDTH_NORMAL - 30), ScaleY(0), ScaleX(30), ScaleY(30));
 
         // Background
         MainWindow.ImgBackground := ImgLoad(WizardForm.Handle, GetScaleImage('background_installing.png'),
@@ -495,7 +495,7 @@ begin
         ImgSetVisibility(MainWindow.ImgProgressBarBackground, False);
 
         BtnSetVisibility(MainWindow.BtnClose, True);
-        BtnSetPosition  (MainWindow.BtnMinimize, ScaleX(WIZARDFORM_WIDTH_NORMAL - 30 - 30), 0, ScaleX(30), ScaleY(30));
+        BtnSetPosition  (MainWindow.BtnMinimize, ScaleX(WIZARDFORM_WIDTH_NORMAL - 30 - 30), ScaleY(0), ScaleX(30), ScaleY(30));
 
         MainWindow.BtnNext := BtnCreate(MainWindow.Handle(),
             ScaleX(214), ScaleY(305), ScaleX(180), ScaleY(44), GetScaleImage('button_finish.png'), 0, False);
@@ -570,7 +570,7 @@ begin
         Top             := ScaleY(5);
         ClientWidth     := ScaleX(500);
         ClientHeight    := ScaleY(20);
-        Font.Size       := 10;
+        Font.Size       := ScaleX(10);
         Font.Color      := clWhite;
         Caption         := FmtMessage(SetupMessage(msgSetupWindowTitle), ['{#MyAppFriendlyName}']);
         Transparent     := True;
@@ -587,7 +587,7 @@ begin
         Top             := ScaleY(64);
         ClientWidth     := ScaleX(400);
         ClientHeight    := ScaleY(20);
-        Font.Size       := 10;
+        Font.Size       := ScaleX(10);
         Font.Color      := clBlack;
         Caption         := SetupMessage(msgExitSetupTitle);
         Transparent     := True;
@@ -717,7 +717,7 @@ begin
     //    Top             := ScaleY(5);
     //    ClientWidth     := ScaleX(500);
     //    ClientHeight    := ScaleY(20);
-    //    Font.Size       := 10;
+    //    Font.Size       := ScaleX(10);
     //    Font.Color      := clWhite;
     //    Caption         := FmtMessage(SetupMessage(msgSetupWindowTitle), ['{#MyAppFriendlyName}']);
     //    Transparent     := True;
@@ -733,7 +733,7 @@ begin
         Top             := ScaleY(32);
         ClientWidth     := ScaleX(478);
         ClientHeight    := ScaleY(370);
-        //Font.Size       := 10;
+        //Font.Size       := ScaleX(10);
         //Font.Color      := clBlack;
         ScrollBars      := ssVertical;
         TabStop         := False;
@@ -920,7 +920,7 @@ begin
   begin
     if (MainWindow.CurrentSlidesNo = 1) then
     begin
-      ImgSetPosition  (MainWindow.Slide_1_t, ScaleX(MainWindow.CurrentSlidesPos - SLIDES_PICTURE_WIDTH), 0, ScaleX(SLIDES_PICTURE_WIDTH), ScaleY(SLIDES_PICTURE_HEIGHT));
+      ImgSetPosition  (MainWindow.Slide_1_t, ScaleX(MainWindow.CurrentSlidesPos - SLIDES_PICTURE_WIDTH), ScaleY(0), ScaleX(SLIDES_PICTURE_WIDTH), ScaleY(SLIDES_PICTURE_HEIGHT));
       ImgSetVisibility(MainWindow.Slide_2_t, False);
       ImgSetVisibility(MainWindow.Slide_3_t, False);
       ImgSetVisibility(MainWindow.Slide_4_t, False);
@@ -928,7 +928,7 @@ begin
     end;
     if (MainWindow.CurrentSlidesNo = 2) then
     begin
-      ImgSetPosition  (MainWindow.Slide_2_t, ScaleX(MainWindow.CurrentSlidesPos - SLIDES_PICTURE_WIDTH), 0, ScaleX(SLIDES_PICTURE_WIDTH), ScaleY(SLIDES_PICTURE_HEIGHT));
+      ImgSetPosition  (MainWindow.Slide_2_t, ScaleX(MainWindow.CurrentSlidesPos - SLIDES_PICTURE_WIDTH), ScaleY(0), ScaleX(SLIDES_PICTURE_WIDTH), ScaleY(SLIDES_PICTURE_HEIGHT));
       ImgSetVisibility(MainWindow.Slide_1_t, False);
       ImgSetVisibility(MainWindow.Slide_3_t, False);
       ImgSetVisibility(MainWindow.Slide_4_t, False);
@@ -940,7 +940,7 @@ begin
     end;
     if (MainWindow.CurrentSlidesNo = 3) then
     begin
-      ImgSetPosition  (MainWindow.Slide_3_t, ScaleX(MainWindow.CurrentSlidesPos - SLIDES_PICTURE_WIDTH), 0, ScaleX(SLIDES_PICTURE_WIDTH), ScaleY(SLIDES_PICTURE_HEIGHT));
+      ImgSetPosition  (MainWindow.Slide_3_t, ScaleX(MainWindow.CurrentSlidesPos - SLIDES_PICTURE_WIDTH), ScaleY(0), ScaleX(SLIDES_PICTURE_WIDTH), ScaleY(SLIDES_PICTURE_HEIGHT));
       ImgSetVisibility(MainWindow.Slide_1_t, False);
       ImgSetVisibility(MainWindow.Slide_2_t, False);
       ImgSetVisibility(MainWindow.Slide_4_t, False);
@@ -952,7 +952,7 @@ begin
     end;
     if (MainWindow.CurrentSlidesNo = 4) then
     begin
-      ImgSetPosition  (MainWindow.Slide_4_t, ScaleX(MainWindow.CurrentSlidesPos - SLIDES_PICTURE_WIDTH), 0, ScaleX(SLIDES_PICTURE_WIDTH), ScaleY(SLIDES_PICTURE_HEIGHT));
+      ImgSetPosition  (MainWindow.Slide_4_t, ScaleX(MainWindow.CurrentSlidesPos - SLIDES_PICTURE_WIDTH), ScaleY(0), ScaleX(SLIDES_PICTURE_WIDTH), ScaleY(SLIDES_PICTURE_HEIGHT));
       ImgSetVisibility(MainWindow.Slide_1_t, False);
       ImgSetVisibility(MainWindow.Slide_2_t, False);
       ImgSetVisibility(MainWindow.Slide_3_t, False);
@@ -964,7 +964,7 @@ begin
     end;
     if (MainWindow.CurrentSlidesNo > 4) then
     begin
-      ImgSetPosition  (MainWindow.Slide_1_t, ScaleX(MainWindow.CurrentSlidesPos - SLIDES_PICTURE_WIDTH), 0, ScaleX(SLIDES_PICTURE_WIDTH), ScaleY(SLIDES_PICTURE_HEIGHT));
+      ImgSetPosition  (MainWindow.Slide_1_t, ScaleX(MainWindow.CurrentSlidesPos - SLIDES_PICTURE_WIDTH), ScaleY(0), ScaleX(SLIDES_PICTURE_WIDTH), ScaleY(SLIDES_PICTURE_HEIGHT));
       ImgSetVisibility(MainWindow.Slide_2_t, False);
       ImgSetVisibility(MainWindow.Slide_3_t, False);
       ImgSetVisibility(MainWindow.Slide_4_t, False);
@@ -1131,7 +1131,7 @@ begin
         Top             := ScaleY(5);
         ClientWidth     := ScaleX(300);
         ClientHeight    := ScaleY(20);
-        Font.Size       := 9;
+        Font.Size       := ScaleX(9);
         Font.Color      := clWhite;
         Caption         := FmtMessage(CustomMessage('NameAndVersion'), ['{#MyAppFriendlyName}', '{#MyAppVersion}']);
         Transparent     := True;
@@ -1164,7 +1164,7 @@ begin
         Top             := Scaley(423);
         ClientWidth     := ScaleX(402);
         ClientHeight    := Scaley(20);
-        Font.Size       := 9;
+        Font.Size       := ScaleX(9);
         Color           := clWhite;
         TabStop         := False;
         OnChange        := @MInnoWizardMain_ChangePath;
@@ -1184,7 +1184,7 @@ begin
         Top             := ScaleY(449);
         ClientWidth     := ScaleX(300);
         ClientHeight    := ScaleY(20);
-        Font.Size       := 9;
+        Font.Size       := ScaleX(9);
         Font.Color      := clGray;
         Caption         := Tips;
         Transparent     := True;
@@ -1202,7 +1202,7 @@ begin
         Top             := ScaleY(349);
         ClientWidth     := ScaleX(60);
         ClientHeight    := ScaleY(30);
-        Font.Size       := 9;
+        Font.Size       := ScaleX(9);
         Font.Color      := clBlack;
         Caption         := SetupMessage(msgWizardInstalling);
         Transparent     := True;
@@ -1220,7 +1220,7 @@ begin
       Top           := ScaleY(349);
       ClientWidth   := ScaleX(50);
       ClientHeight  := ScaleY(30);
-      Font.Size     := 10;
+      Font.Size     := ScaleX(10);
       Font.Color    := clBlack;
       Caption       := '';
       Transparent   := True;
