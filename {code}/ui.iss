@@ -109,7 +109,7 @@ const
     WIZARDFORM_HEIGHT_MORE      = 503;
     SLIDES_PICTURE_WIDTH        = WIZARDFORM_WIDTH_NORMAL;
     SLIDES_PICTURE_HEIGHT       = 332;
-    SLIDES_PAUSE_SECONDS        = 3;
+    SLIDES_PAUSE_SECONDS        = 5;
 
 ////////////////////////////////////////////////////////////////////////////
 // declaration
@@ -441,7 +441,7 @@ begin
 
         // ProgressBar
         MainWindow.ImgProgressBarBackground := ImgLoad(MainWindow.Handle(), GetScaleImage('progressbar_background.png'), 
-            ScaleX(20), ScaleY(374), ScaleX(560), ScaleY(6), True, True);
+            ScaleX(20), ScaleY(374), ScaleX(560), ScaleY(8), True, True);
 
         MainWindow.ImgProgressBarForeground := ImgLoad(MainWindow.Handle(), GetScaleImage('progressbar_foreground.png'), 
             ScaleX(20), ScaleY(374), ScaleX(0), ScaleY(0), True, True);
@@ -1090,8 +1090,8 @@ begin
       MainWindow.ProgressText.Caption := Format('%d', [Round(pr)]) + '%';
 
       w := Round((ScaleX(560) * pr) / 100);
-      ImgSetPosition   (MainWindow.ImgProgressBarForeground, ScaleX(20), ScaleY(374), w, ScaleY(6));
-      ImgSetVisiblePart(MainWindow.ImgProgressBarForeground, ScaleX(0), ScaleY(0), w, ScaleY(6));
+      ImgSetPosition   (MainWindow.ImgProgressBarForeground, ScaleX(20), ScaleY(374), w, ScaleY(8));
+      ImgSetVisiblePart(MainWindow.ImgProgressBarForeground, ScaleX(0), ScaleY(0), w, ScaleY(8));
       ImgApplyChanges  (MainWindow.Handle());
     end;
 end;
@@ -1241,22 +1241,22 @@ begin
         ScaleX(WIZARDFORM_WIDTH_NORMAL - 30 - 30), ScaleY(0), ScaleX(30), ScaleY(30), GetScaleImage('button_minimize.png'), 0, False);
     
     MainWindow.BtnNext          := BtnCreate(MainWindow.Handle(),
-        ScaleX(211), ScaleY(305), ScaleX(178), ScaleY(43), GetScaleImage('button_setup_or_next.png'), 0, False);
+        ScaleX(211), ScaleY(305), ScaleX(182), ScaleY(44), GetScaleImage('button_setup_or_next.png'), 0, False);
 
     MainWindow.BtnSelectPath    := BtnCreate(MainWindow.Handle(),
         ScaleX(506), ScaleY(420), ScaleX(75), ScaleY(24), GetScaleImage('button_browse.png'), 0, False);
 
     MainWindow.BtnMoreOption    := BtnCreate(MainWindow.Handle(),
-        ScaleX(511), ScaleY(374), ScaleX(78), ScaleY(14), GetScaleImage('button_customize_setup.png'), 0, False);
+        ScaleX(511), ScaleY(374), ScaleX(79), ScaleY(16), GetScaleImage('button_customize_setup.png'), 0, False);
 
     MainWindow.BtnNormalOption  := BtnCreate(MainWindow.Handle(),
-        ScaleX(511), ScaleY(374), ScaleX(78), ScaleY(14), GetScaleImage('button_uncustomize_setup.png'), 0, False);
+        ScaleX(511), ScaleY(374), ScaleX(79), ScaleY(16), GetScaleImage('button_uncustomize_setup.png'), 0, False);
 
     MainWindow.BtnLicense := BtnCreate(MainWindow.Handle(), 
         ScaleX(110), ScaleY(376), ScaleX(96), ScaleY(12), GetScaleImage('button_license.png'), 0, False);
              
     MainWindow.ChkLicense := BtnCreate(MainWindow.Handle(), 
-        ScaleX(11), ScaleY(374), ScaleX(93), ScaleY(17), GetScaleImage('checkbox_license.png'), 0, True);
+        ScaleX(11), ScaleY(374), ScaleX(92), ScaleY(16), GetScaleImage('checkbox_license.png'), 0, True);
 
     // Button-Event
     BtnSetEvent(MainWindow.BtnClose         , BtnClickEventID, CreateCallback(@BtnClickEvent_Main_Close));
